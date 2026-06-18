@@ -1,0 +1,119 @@
+/* src/pages/StyleGuide.css */
+
+.sandbox-container {
+    padding: 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    font-family: sans-serif;
+    text-align: left;
+    background-color: #fafafa;
+    min-height: 100vh;
+}
+
+.sandbox-title {
+    color: #2d3436;
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.sandbox-subtitle {
+    color: #636e72;
+    font-size: 1rem;
+}
+
+.divider {
+    border: 0;
+    height: 1px;
+    background: #dfe6e9;
+    margin: 30px 0;
+}
+
+/* Reusable Components */
+.btn-primary {
+    background-color: #ff7675;
+    color: #ffffff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #e84393;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+    max-width: 400px;
+}
+
+.input-label {
+    color: #2d3436;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.input-field {
+    padding: 12px;
+    border: 1px solid #b2bec3;
+    border-radius: 6px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.input-field:focus {
+    border-color: #ff7675;
+}
+
+/* Container to establish the positioning context */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 320px; /* Optional constraint */
+}
+
+/* Position the SVG perfectly on the left */
+.input-icon {
+  position: absolute;
+  left: 16px;          /* Distance from the left edge */
+  color: #94a3b8;      /* Subtle slate gray color */
+  pointer-events: none;/* Ensures clicking the icon still focuses the input */
+}
+
+/* Style the input field */
+.custom-input {
+  width: 100%;
+  padding: 12px 16px;
+  /* CRITICAL: Extra left padding so text starts AFTER the icon */
+  padding-left: 44px; 
+  
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+/* Universal placeholder styling */
+.custom-input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* Subtle focus state effect */
+.custom-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Optional: Change icon color when the input is active */
+.input-wrapper:focus-within .input-icon {
+  color: #3b82f6;
+}
