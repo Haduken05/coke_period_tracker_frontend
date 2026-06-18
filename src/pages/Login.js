@@ -6,11 +6,12 @@ import {Link} from 'react-router-dom';
 const Login = () => {
 
     const [isVisible, setIsVisible] = useState(false);
+    const [isSignUp, setIsSignUp] = useState(false);
 
     return(
 
         <div className="app-container">
-            <div className="login-container">
+            <div className={`login-container ${isSignUp ? 'sign-up-mode' : ''}`}>
                 
                 <div className="login-left">
 
@@ -18,18 +19,43 @@ const Login = () => {
                     <div className="sphere sphere-2"></div>
                     <div className="sphere sphere-3"></div>
 
-                    <h1>Welcome</h1>
-                    <h2>Please sign in to continue</h2>
+                    <h1>{isSignUp ? "Create Account" : "Welcome"}</h1>
+                    <h2>{isSignUp ? "Join us today!" : "Please sign in to continue"}</h2>
 
                 </div>
 
-                <div className="login-right">
+                <div className="login-right"> 
 
                     <div className="login-form-header">
-                        <h2>Sign In</h2>
+                        <h2>{isSignUp ? 'Create Account' : 'Sign In'}</h2>
                     </div>
 
                     <form className="login-form">
+
+                        {isSignUp && (
+                            <div className="login-form-input-wrapper">
+                                <input type="text" className="login-form-input" placeholder="Name"/>
+
+                                <svg 
+                                    className="login-icon"
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    width="24" 
+                                    height="24" 
+                                    viewBox="0 0 24 24" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    stroke-width="2" 
+                                    stroke-linecap="round" 
+                                    stroke-linejoin="round"
+                                    >
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                    
+                                    <path d="M5 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"></path>
+                                    </svg>
+
+
+                            </div>
+                        )}
 
                         {/* Username Input Field */}
                         <div className="login-form-input-wrapper">
@@ -103,25 +129,42 @@ const Login = () => {
                             </button>
                         </div> 
 
-                        <div className="login-form-options">
-                            <label className="remember-me">
-                                <input type="checkbox"/>
-                                    Remember Me       
-                            </label>
-                            <Link to="/dashboard" className="forgot-password"> Forgot Password? </Link>
-                        </div>
+                        {!isSignUp && (
+                            <div className="login-form-options">
+                                <label className="remember-me">
+                                    <input type="checkbox"/>
+                                        Remember Me       
+                                </label>
+                                <Link to="/dashboard" className="forgot-password"> Forgot Password? </Link>
+                            </div>
+                        )}
 
-                        <div className="login-actions-contaienr">
-                            <button type="submit" className="login-btn-primary">Sign In</button>
-                            <div className="login-divider">Or</div>
-                            <button type="button" className="login-btn-secondary">Continue with Google</button>
+                        <div className="login-actions-container">
+                            <button type="submit" className="login-btn-primary">
+                                {isSignUp ? 'Create Account' : 'Sign In'}
+                            </button>
+
+                            {!isSignUp && (
+                                <>
+                                    <div className="login-divider">Or</div>
+                                    <button type="button" className="login-btn-secondary">Continue with Google</button>
+                                </>
+                            )}
                         </div>
 
                     </form>
 
-                    <p className="login-form-footer">
-                        Don't have an account?
-                    </p>
+                    <div className="login-form-footer">
+                        {isSignUp ? (
+                            <p> Already have an account? 
+                                <span className="login-toggle-link" onClick={() => setIsSignUp(false)}> Sign In</span> 
+                            </p>
+                        ) : (
+                            <p> Don't have an account?
+                                <span className="login-toggle-link" onClick={() => setIsSignUp(true)}> Create Account</span>
+                            </p>
+                        )}
+                    </div>
                 
                 </div>
 
