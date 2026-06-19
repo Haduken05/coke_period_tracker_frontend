@@ -11,6 +11,7 @@ const Login = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [isSignUp, setIsSignUp] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [timer, setTimer] = useState(0);
     const [isTimerActive, setIsTimerActive] = useState(false);
@@ -59,6 +60,7 @@ const Login = () => {
         }
 
         try {
+            setIsLoading(true);
             const response = await fetch(`${API_BASE_URL}/auth/send-code`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -79,6 +81,8 @@ const Login = () => {
             }
         } catch (err){
             setError('An error occurred while sending the verification code. Please try again later.');
+        } finally{
+            setIsLoading(false);
         }
     };
 
@@ -88,6 +92,7 @@ const Login = () => {
         setMessage('');
 
         try{
+            setIsLoading(true);
             const response = await fetch(`${API_BASE_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -111,6 +116,8 @@ const Login = () => {
             }
         } catch (err){
             setError('An error occurred during registration. Please try again later.');
+        } finally{
+            setIsLoading(false);
         }
     };
 
@@ -120,6 +127,7 @@ const Login = () => {
         setMessage('');
 
         try {
+            setIsLoading(true);
             const response = await fetch(`${API_BASE_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -150,6 +158,8 @@ const Login = () => {
             }
         } catch (err){
             setError('An error occurred during login. Please try again later.');
+        } finally{
+            setIsLoading(false);
         }
     };
 
@@ -184,12 +194,21 @@ const Login = () => {
                         <div style={{ color: '#2ecc71', marginBottom: '10px', fontSize: '0.9rem'}}>
                     {message}</div>}
 
-                    <form className="login-form" onSubmit={isSignUp ? (isVerifying ? handleRegisterSubmit : handleRequestCode) : handleSignInSubmit}>
+                    <form 
+                        className="login-form" 
+                        key={isSignUp ? (isVerifying ? "otp-stage-form" : "signup-stage-form") : "signin-stage-form"}
+                        onSubmit={isSignUp ? (isVerifying ? handleRegisterSubmit : handleRequestCode) : handleSignInSubmit}>
 
                         {/* Registration Only: Name Field */}
                         {isSignUp && !isVerifying &&(
                             <div className="login-form-input-wrapper">
-                                <input type="text" className="login-form-input" placeholder="Name"/>
+                                <input 
+                                type="text" 
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                className="login-form-input" 
+                                placeholder="Name"/>
 
                                 <svg 
                                     className="login-icon"
@@ -346,11 +365,13 @@ const Login = () => {
                             <button 
                                 type="submit" 
                                 className="login-btn-primary"
-                                disabled={isSignUp && isVerifying && isTimerActive}
+                                disabled={isLoading || (isSignUp && !isVerifying && isTimerActive)}
                             >
-                                {isSignUp ? (
+                                {isLoading ? (
+                                    <span className="loading-spinner-text">Loading...</span>
+                                ) : isSignUp ? (
                                     isVerifying ? 'Confirm Code & Register' : (isTimerActive ? `Wait ${timer}s` : 'Send Code')
-                                 ) : 'Sign In'}
+                                ) : 'Sign In'}
                             </button>
                             
                             {isSignUp && isVerifying && !isTimerActive &&(
