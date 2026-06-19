@@ -1,12 +1,158 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './style/LoginStyle.css';
 
+import { useNavigate } from 'react-router-dom';
 import {Link} from 'react-router-dom';
 
 const Login = () => {
 
+    const navigate = useNavigate();
+
     const [isVisible, setIsVisible] = useState(false);
     const [isSignUp, setIsSignUp] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+
+    const [timer, setTimer] = useState(0);
+    const [isTimerActive, setIsTimerActive] = useState(false);
+
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        verificationCode: ''
+    });
+
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        let interval = null;
+
+        if(isTimerActive && timer > 0){
+            interval = setInterval(() => {
+                setTimer((prevTime) => prevTime - 1);
+            }, 1000);
+        } else if (timer === 0){
+            setIsTimerActive(false);
+            clearInterval(interval);
+        }
+
+        return () => clearInterval(interval);
+    }, [isTimerActive, timer]);
+
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    // API Call
+    const API_BASE_URL = 'http://localhost:8080/api';
+
+    const handleRequestCode = async (e) => {
+        if (e) e.preventDefault();
+        setError('');
+        setMessage('');
+
+        if(!formData.email){
+            setError('Please enter your email to receive the verification code.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/send-code`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: formData.email })
+            }); 
+
+            const data = await response.json();
+
+            if(response.ok){
+                setMessage("Verification code sent to your email. Please check your inbox.");
+                setIsVerifying(true);
+
+                setTimer(60);
+                setIsTimerActive(true);
+
+            } else{
+                setError(data.error || 'Failed to send verification code. Please try again.');
+            }
+        } catch (err){
+            setError('An error occurred while sending the verification code. Please try again later.');
+        }
+    };
+
+    const handleRegisterSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setMessage('');
+
+        try{
+            const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password,
+                    code: formData.verificationCode
+                })
+            });
+
+            const data = await response.json();
+
+            if(response.ok){
+                setMessage("Account created successfully! Switching to login...");
+                setTimeout(() => {
+                    setIsSignUp(false);
+                    setIsVerifying(false);
+                }, 2000);
+            } else {
+                setError(data.error || 'Registration failed. Please check your details and try again.');
+            }
+        } catch (err){
+            setError('An error occurred during registration. Please try again later.');
+        }
+    };
+
+    const handleSignInSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setMessage('');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password
+                })
+            });
+
+            const data = await response.json();
+
+            if(response.ok){
+                localStorage.setItem('token', data.token);
+                navigate('/dashboard');
+            } else{
+                if (response.status === 401 && data.error && data.error.includes("registration setup")){
+                    setError('Your account setup is incomplete. Redirecting you to verifying your email...');
+                    setTimeout(() => {
+                        setError('');
+                        setIsSignUp(true);
+                        setIsVerifying(true);
+                        setMessage('Please enter the verification code sent to your email to complete your registration.');
+                    }, 2000);
+                    
+                    return;
+                }
+
+            }
+        } catch (err){
+            setError('An error occurred during login. Please try again later.');
+        }
+    };
+
 
     return(
 
@@ -19,20 +165,29 @@ const Login = () => {
                     <div className="sphere sphere-2"></div>
                     <div className="sphere sphere-3"></div>
 
-                    <h1>{isSignUp ? "Create Account" : "Welcome"}</h1>
-                    <h2>{isSignUp ? "Join us today!" : "Please sign in to continue"}</h2>
+                    <h1>{isSignUp ? (isVerifying ? "Verify Email" : "Create Account") : "Welcome"}</h1>
+                    <h2>{isSignUp ? (isVerifying ? "Enter the 6-digit code" : "Join us today!") : "Please sign in to continue"}</h2>
 
                 </div>
 
                 <div className="login-right"> 
 
                     <div className="login-form-header">
-                        <h2>{isSignUp ? 'Create Account' : 'Sign In'}</h2>
+                        <h2>{isSignUp ? (isVerifying ? 'Enter OTP' : 'Create Account') : 'Sign In'}</h2>
                     </div>
 
-                    <form className="login-form">
+                    {error && 
+                        <div style={{ color: '#ff7675', marginBottom: '10px', fontSize: '0.9rem'}}>
+                    {error}</div>}
 
-                        {isSignUp && (
+                    {message && 
+                        <div style={{ color: '#2ecc71', marginBottom: '10px', fontSize: '0.9rem'}}>
+                    {message}</div>}
+
+                    <form className="login-form" onSubmit={isSignUp ? (isVerifying ? handleRegisterSubmit : handleRequestCode) : handleSignInSubmit}>
+
+                        {/* Registration Only: Name Field */}
+                        {isSignUp && !isVerifying &&(
                             <div className="login-form-input-wrapper">
                                 <input type="text" className="login-form-input" placeholder="Name"/>
 
@@ -58,76 +213,117 @@ const Login = () => {
                         )}
 
                         {/* Username Input Field */}
-                        <div className="login-form-input-wrapper">
-                            <input 
-                                type="text"
-                                className="login-form-input"
-                                placeholder="Email"
-                            />
-                            <svg 
-                                className="login-icon"
-                                width="22" 
-                                height="22" 
-                                viewBox="0 0 24 24" 
-                                fill="none" 
-                                stroke="currentColor" 
-                                stroke-width="2" 
-                                stroke-linecap="round" 
-                                stroke-linejoin="round"
-                            >
-                                <rect 
-                                    x="2" 
-                                    y="4" 
-                                    width="20" 
-                                    height="16" 
-                                    rx="2"
-                                ></rect>
-                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-
-                            </svg>
-                        </div>
-
-                        {/* Password Input Field */}
-                        <div className="login-form-input-wrapper"> 
-                            <input 
-                                type={isVisible ? "text" : "password"}
-                                className="login-form-input"
-                                placeholder="Password"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setIsVisible(!isVisible)}
-                                className="login-icon"
-                                aria-label={isVisible ? "Hide password" : "Show password"}
-                            >
+                        {!isVerifying && (
+                            <div className="login-form-input-wrapper">
+                                <input 
+                                    type="text"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="login-form-input"
+                                    placeholder="myEmail@gmail.com"
+                                />
                                 <svg 
-                                    width="20" 
-                                    height="20" 
+                                    className="login-icon"
+                                    width="22" 
+                                    height="22" 
                                     viewBox="0 0 24 24" 
                                     fill="none" 
                                     stroke="currentColor" 
-                                    strokeWidth="2" 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round"
+                                    stroke-width="2" 
+                                    stroke-linecap="round" 
+                                    stroke-linejoin="round"
                                 >
-                                    {isVisible ? (
-                                        <>
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                        </>
-                                    ) : (
-                                            <>
-                                                <path d="M2 10a13.74 13.74 0 0 0 20 0"></path>
+                                    <rect 
+                                        x="2" 
+                                        y="4" 
+                                        width="20" 
+                                        height="16" 
+                                        rx="2"
+                                    ></rect>
+                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
 
-                                                <path d="M4 12 2.5 14"></path>
-                                                <path d="M9 14v3"></path>
-                                                <path d="M15 14v3"></path>
-                                                <path d="M20 12 21.5 14"></path>
-                                            </>
-                                    )}
                                 </svg>
-                            </button>
-                        </div> 
+                            </div>
+                        )}
+
+                        {/* Password Input Field */}
+                        {!isVerifying && (
+                            <div className="login-form-input-wrapper"> 
+                                <input 
+                                    type={isVisible ? "text" : "password"}
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleInputChange}
+                                    className="login-form-input"
+                                    placeholder="Password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setIsVisible(!isVisible)}
+                                    className="login-icon"
+                                    aria-label={isVisible ? "Hide password" : "Show password"}
+                                >
+                                    <svg 
+                                        width="20" 
+                                        height="20" 
+                                        viewBox="0 0 24 24" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        strokeWidth="2" 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round"
+                                    >
+                                        {isVisible ? (
+                                            <>
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </>
+                                        ) : (
+                                                <>
+                                                    <path d="M2 10a13.74 13.74 0 0 0 20 0"></path>
+
+                                                    <path d="M4 12 2.5 14"></path>
+                                                    <path d="M9 14v3"></path>
+                                                    <path d="M15 14v3"></path>
+                                                    <path d="M20 12 21.5 14"></path>
+                                                </>
+                                        )}
+                                    </svg>
+                                </button>
+                            </div> 
+                        )}                        
+                        
+                        {/* Verification Code Input Field */} 
+                        {isSignUp && isVerifying && (
+                            <div className="login-form-input-wrapper">
+                                    <input
+                                        type="text"
+                                        name="verificationCode"
+                                        className="login-form-input"
+                                        placeholder="Enter Verification Code"
+                                        value={formData.verificationCode}
+                                        onChange={handleInputChange}
+                                        maxLength="6"    
+                                    />
+
+                                    <svg 
+                                        className="login-icon" 
+                                        xmlns="http://www.w3.org/2000/svg" 
+                                        width="22" 
+                                        height="22" 
+                                        viewBox="0 0 24 24" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        strokeWidth="2" 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round">
+                                            
+                                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                                        <path d="m9 12 2 2 4-4"></path>
+                                    </svg>
+                            </div>
+                        )}                       
 
                         {!isSignUp && (
                             <div className="login-form-options">
@@ -140,9 +336,33 @@ const Login = () => {
                         )}
 
                         <div className="login-actions-container">
-                            <button type="submit" className="login-btn-primary">
-                                {isSignUp ? 'Create Account' : 'Sign In'}
+
+                            {isSignUp && isVerifying && isTimerActive && (
+                                <div style={{ color: '#6c5ce7', marginBottom: '10px', fontSize: '0.9rem', textAlign: 'center'}}>
+                                    Resend available in: <strong>{timer}s</strong>
+                                </div>
+                            )}
+
+                            <button 
+                                type="submit" 
+                                className="login-btn-primary"
+                                disabled={isSignUp && isVerifying && isTimerActive}
+                            >
+                                {isSignUp ? (
+                                    isVerifying ? 'Confirm Code & Register' : (isTimerActive ? `Wait ${timer}s` : 'Send Code')
+                                 ) : 'Sign In'}
                             </button>
+                            
+                            {isSignUp && isVerifying && !isTimerActive &&(
+                                <span
+                                    className="login-toggle-link"
+                                    style={{ textAlign: 'center', display: 'block', marginTop: '10px', fontSize: '0.9rem'}}
+                                    onClick={handleRequestCode}
+                                >
+                                    Didn't receive the code? Resend
+                                </span>
+                            )}
+
 
                             {!isSignUp && (
                                 <>
