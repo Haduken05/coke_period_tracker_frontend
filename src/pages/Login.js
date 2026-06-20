@@ -46,6 +46,11 @@ const Login = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const validateEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        return emailRegex.test(String(email).toLowerCase());
+    };
+
     // API Call
     const API_BASE_URL = 'http://localhost:8080/api';
 
@@ -54,8 +59,18 @@ const Login = () => {
         setError('');
         setMessage('');
 
+        if(!formData.name.trim() || !formData.email.trim() || !formData.password.trim()){
+            setError('Please fill in all fields to create an account.');
+            return;
+        }
+
         if(!formData.email){
             setError('Please enter your email to receive the verification code.');
+            return;
+        }
+
+        if(!validateEmail(formData.email)){
+            setError('Please enter a valid email address.');
             return;
         }
 
@@ -91,6 +106,11 @@ const Login = () => {
         setError('');
         setMessage('');
 
+        if(!formData.verificationCode.trim()){
+            setError('Please enter the verification code sent to your email.');
+            return;
+        }
+
         try{
             setIsLoading(true);
             const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -125,6 +145,16 @@ const Login = () => {
         e.preventDefault();
         setError('');
         setMessage('');
+
+        if(!formData.email.trim() || !formData.password.trim()){
+            setError('Please enter your email and password.');
+            return;
+        }
+
+        if(!validateEmail(formData.email)){
+            setError('Please enter a valid email address.');
+            return;
+        }
 
         try {
             setIsLoading(true);
@@ -398,11 +428,11 @@ const Login = () => {
                     <div className="login-form-footer">
                         {isSignUp ? (
                             <p> Already have an account? 
-                                <span className="login-toggle-link" onClick={() => setIsSignUp(false)}> Sign In</span> 
+                                <span className="login-toggle-link" onClick={() => { setIsSignUp(false); setError(''); setMessage(''); }}> Sign In</span> 
                             </p>
                         ) : (
                             <p> Don't have an account?
-                                <span className="login-toggle-link" onClick={() => setIsSignUp(true)}> Create Account</span>
+                                <span className="login-toggle-link" onClick={() => { setIsSignUp(true); setError(''); setMessage(''); }}> Create Account</span>
                             </p>
                         )}
                     </div>
